@@ -14,7 +14,7 @@ export function createNameParticles(lines: readonly string[], rectangle: DOMRect
   canvas.height = height
   const context = canvas.getContext('2d', { willReadFrequently: true })
   if (!context) return []
-  let fontSize = Math.min(100, width / 7)
+  let fontSize = Math.min(100, width / 7, height / (Math.max(1, lines.length) * 1.16))
   context.font = `600 ${fontSize}px Arial, sans-serif`
   const maximumWidth = Math.max(...lines.map((line) => context.measureText(line).width))
   fontSize *= Math.min(1, width / maximumWidth)
@@ -29,7 +29,7 @@ export function createNameParticles(lines: readonly string[], rectangle: DOMRect
   for (let y = 0; y < height; y += gap) for (let x = 0; x < width; x += gap) {
     if (pixels[(y * width + x) * 4 + 3] > 110) {
       const target = { x: x + rectangle.left, y: y + rectangle.top }
-      points.push({ id: startId + points.length, ...target, target, vx: 0, vy: 0, radius: gap === 3 ? 0.95 : 1.25, opacity: 0.9, frozen: false, phase: (x * 0.73 + y * 0.31) % (Math.PI * 2) })
+      points.push({ id: startId + points.length, ...target, target, vx: 0, vy: 0, radius: gap === 3 ? 1.1 : 1.5, opacity: 0.9, frozen: false, phase: (x * 0.73 + y * 0.31) % (Math.PI * 2) })
     }
   }
   // Limit raster complexity even on unusually wide screens.

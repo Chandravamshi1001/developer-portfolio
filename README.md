@@ -1,6 +1,6 @@
 # Chandra Vamshi Katineni — developer portfolio
 
-React, TypeScript, Vite, Tailwind CSS, and Canvas 2D. Personal biography, projects, education, and contact details are clearly marked placeholders until supplied by the owner.
+React, TypeScript, Vite, Tailwind CSS, and Canvas 2D. The seven sections present the owner's supplied professional summary, experience, projects, skills, education, and contact links. Claims and metrics come from owner-provided resume content.
 
 ## Development
 
@@ -10,13 +10,15 @@ Validation: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`
 
 ## Architecture
 
-`src/content/portfolio.ts` contains identity and sections. `src/components/` contains semantic content. `src/features/particles/` separates physics, geometry, gestures, Canvas rendering, and UI. `src/features/navigation/` manages the desktop presentation. `tests/` holds independent behavior tests.
+`src/content/portfolio.ts` contains typed identity, section definitions, and resume facts. `src/components/` contains semantic sections and reusable experience, project, skill, and education cards. `src/features/particles/` separates physics, geometry, gestures, Canvas rendering, and UI. `src/features/navigation/` manages the desktop presentation. `tests/` holds independent behavior tests.
+
+An optional `resumeUrl` is deliberately unset until an actual resume PDF is provided. Download links render only when that asset is configured. Project repository URLs are omitted because none were supplied.
 
 ## Interaction
 
 Click particles in empty background to freeze; double-click to release. Drag empty space to freeze a region. Particle controls provide pause, release selection, and release all. On touch, tap toggles a particle; Select region enables drag selection while ordinary touch scrolling stays available outside that mode. Keyboard selection supports arrows to move and Shift+arrows to resize, plus freeze/release buttons.
 
-Desktop vertical scrolling drives horizontal sections when content fits. Mobile, short viewports, long content, and reduced motion use native vertical sections. Reduced motion shows a static particle name. The canvas is decorative; semantic HTML preserves the name and content for assistive technology.
+Desktop vertical scrolling drives one horizontal section track through a pinned, scrubbed GSAP ScrollTrigger. Horizontal travel and pin distance use the measured track width minus the viewport width and refresh on resize. Longer content and expanded details continue into additional horizontal columns without nested section scrollbars. Section anchors, keyboard focus, and browser Back/Forward map to the same track positions. Mobile, coarse-pointer devices, very short viewports, and reduced motion use native vertical document flow. Reduced motion shows a static particle name and disables text entrances. The fixed canvas stays outside the moving track; semantic HTML preserves the full name and content for assistive technology.
 
 Particle count, pixel density, and frame delta are capped. Hidden tabs suspend animation. Frozen positions survive resizing; Release all can release particles outside a resized viewport.
 

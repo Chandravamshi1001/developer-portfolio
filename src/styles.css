@@ -20,7 +20,7 @@ button:disabled { opacity: .4; cursor: default; }
 .navigation a:hover,.navigation a[aria-current] { color: white; }
 .navigation a[aria-current]::after { content: ''; display: block; width: 12px; height: 1px; background: white; margin: 7px auto -8px; }
 .menu-button { display: none; }
-.portfolio-section { min-height: 100svh; padding: 150px 12vw 110px; position: relative; display: flex; align-items: center; scroll-margin-top: 0; }
+.portfolio-section { --section-padding-top: 150px; --section-padding-bottom: 110px; min-height: 100svh; padding: var(--section-padding-top) 12vw var(--section-padding-bottom); position: relative; display: flex; align-items: center; scroll-margin-top: 0; }
 .portfolio-section:focus { outline: none; }
 .section-content { width: min(100%, 1000px); position: relative; }
 .section-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: .23em; color: #b4b8c1; margin: 0 0 34px; }
@@ -31,7 +31,7 @@ h3 { font-size: 20px; font-weight: 450; letter-spacing: -.02em; }
 p { font-size: 15px; line-height: 1.8; }
 .muted { color: #969da8; }
 .section-lead { font-size: 20px; }
-.section-home { padding-top: 135px; padding-bottom: 90px; }
+.section-home { --section-padding-top: 135px; --section-padding-bottom: 90px; }
 .section-home .section-content { width: 100%; }
 .name-heading { height: clamp(130px,16vw,230px); width: min(740px,100%); margin: 0 0 20px; pointer-events: none; }
 .hero-statement { font-size: clamp(25px,2.7vw,38px); line-height: 1.25; font-weight: 400; letter-spacing: -.045em; margin-bottom: 20px; }
@@ -59,10 +59,18 @@ p { font-size: 15px; line-height: 1.8; }
 .copyright { color: #777e88; font-size: 10px; margin-top: 55px; }
 .particle-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 .section-shell { position: relative; z-index: 1; }
-.is-horizontal { height: 600vh; }
-.is-horizontal .section-viewport { position: sticky; top: 0; height: 100vh; overflow: hidden; }
-.is-horizontal .section-track { display: flex; width: 600vw; will-change: transform; }
-.is-horizontal .portfolio-section { width: 100vw; flex: 0 0 100vw; height: 100vh; }
+.section-viewport { overflow: clip; }
+.is-horizontal { height: 100vh; }
+.is-horizontal .section-viewport { height: 100vh; overflow: hidden; }
+.is-horizontal .section-track { position: relative; display: flex; flex-wrap: nowrap; width: max-content; height: 100vh; will-change: transform; }
+.is-horizontal .portfolio-section { width: var(--panel-width, 100vw); flex: 0 0 var(--panel-width, 100vw); min-height: 0; height: 100vh; }
+.is-horizontal .section-content { width: 76vw; flex: none; height: calc(100vh - var(--section-padding-top) - var(--section-padding-bottom)); display: flex; flex-direction: column; }
+.is-horizontal .section-content > :not(.section-scroll) { flex-shrink: 0; }
+.is-horizontal .section-scroll { display: block; flex: 1; min-height: 0; width: 100%; columns: 320px; column-gap: 40px; column-fill: auto; overflow: visible; }
+.is-horizontal .section-scroll > * { break-inside: avoid; }
+.is-horizontal .about-copy { max-width: none; columns: 380px; }
+.is-horizontal .skill-group { margin-bottom: 22px; }
+.is-horizontal .section-home .section-content { justify-content: center; }
 .particle-controls { position: fixed; left: 22px; bottom: 20px; z-index: 40; max-width: min(360px,calc(100vw - 44px)); background: #101216ed; border: 1px solid #ffffff1f; border-radius: 5px; font-size: 10px; }
 .particle-controls summary { padding: 11px 14px; color: #b7bdc6; list-style: none; font-size: 10px; letter-spacing: .04em; }
 .particle-controls summary span { margin-left: 24px; }
@@ -77,6 +85,65 @@ p { font-size: 15px; line-height: 1.8; }
 .section-progress div { width: 60px; height: 1px; background: #ffffff30; }
 .skip-link { position: fixed; top: -100px; left: 20px; z-index: 100; background: #fff; color: #08090b; padding: 12px; }
 .skip-link:focus { top: 12px; }
+.hero-role { font-size: 11px; letter-spacing: .075em; color: #b5bdc8; margin-bottom: 18px; }
+.hero-actions,.contact-links { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+.profile-link { font-size: 11px; color: #a7afbb; padding: 12px 0; }
+.profile-link:hover { color: #fff; }
+.section-description { font-size: 13px; margin-bottom: 25px; }
+.section-scroll { scrollbar-width: thin; scrollbar-color: #454b55 transparent; }
+.section-scroll:focus-visible { outline-offset: 4px; }
+.about-copy { max-width: 650px; }
+.about-copy p { color: #adb4bf; margin-bottom: 20px; }
+.about-copy .about-signature { font-size: 12px; color: #e4e7ec; padding-top: 12px; }
+.resume-card { border-top: 1px solid #ffffff25; padding: 22px 0; }
+.resume-card:last-child { padding-bottom: 10px; }
+.card-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px; justify-content: space-between; }
+.card-heading h3 { margin: 0; font-size: 20px; }
+.card-meta { font-size: 10px; letter-spacing: .025em; color: #a8b0bc; }
+.card-role { font-size: 12px; color: #d4d9e1; margin: 9px 0 12px; }
+.card-role span { color: #969eab; }
+.card-summary { color: #aab2bf; font-size: 13px; line-height: 1.7; margin-bottom: 12px; max-width: 720px; }
+.card-details summary { width: fit-content; color: #e0e4eb; font-size: 11px; padding: 8px 0; }
+.card-details ul { list-style: disc; padding-left: 20px; margin: 12px 0 4px; }
+.card-details li,.card-details p { font-size: 12px; line-height: 1.8; color: #aab2bf; margin-bottom: 9px; }
+.tag-list { list-style: none; display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; padding: 0; }
+.tag-list li { font-size: 10px; line-height: 1.5; color: #b6bfcd; border: 1px solid #ffffff19; border-radius: 3px; padding: 4px 7px; }
+.project-status { font-size: 9px; text-transform: uppercase; letter-spacing: .09em; color: #c2c9d2; border: 1px solid #ffffff29; border-radius: 3px; padding: 4px 7px; }
+.skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 35px; }
+.skill-group h3 { font-size: 14px; margin-bottom: 12px; }
+.skill-group .tag-list { margin: 0; }
+.education-card h3 { margin: 15px 0 12px; }
+.education-gpa { font-size: 12px; color: #aeb7c5; margin: 18px 0; }
+.education-gpa strong { color: #e3e7ed; font-weight: 500; margin-left: 10px; }
+.education-card h4 { font-size: 11px; font-weight: 500; color: #b8c0cc; margin-bottom: 10px; }
+.coursework-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 7px 20px; color: #9fa9b7; font-size: 12px; }
+.contact-email { display: inline-block; font-size: clamp(16px,2.2vw,28px); letter-spacing: -.035em; overflow-wrap: anywhere; margin: 20px 0; border-bottom: 1px solid #ffffff3b; padding-bottom: 9px; max-width: 100%; }
+.contact-links { margin-bottom: 32px; }
+@keyframes text-enter { from { opacity: .3; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion:no-preference) {
+  .is-active .section-intro,.is-active .hero-copy { animation: text-enter .7s cubic-bezier(.2,.7,.2,1) both; }
+}
+@media (min-width:1000px) and (min-height:560px) and (max-height:799px) and (pointer:fine) {
+  .site-header { height: 76px; }
+  .portfolio-section { --section-padding-top: 100px; --section-padding-bottom: 60px; }
+  .section-eyebrow { margin-bottom: 24px; }
+  h2 { font-size: clamp(36px,4vw,52px); margin-bottom: 22px; }
+  .name-heading { height: 136px; margin-bottom: 16px; }
+  .hero-statement { font-size: 26px; margin-bottom: 12px; }
+  .hero-description { font-size: 12px; line-height: 1.7; margin-bottom: 14px; }
+  .hero-footer { margin-top: 20px; }
+  .skill-list { margin-top: 22px; }
+  .skill-list li { padding: 9px 0; font-size: 15px; }
+  .project-placeholder { margin-top: 28px; padding: 24px 0; }
+  .annotation { margin: 25px 0; }
+  .copyright { margin-top: 35px; }
+  .selection-surface { top: 76px; }
+  .hero-role { margin-bottom: 12px; }
+  .hero-actions { gap: 10px 24px; }
+  .section-description { margin-bottom: 20px; }
+  .resume-card { padding: 17px 0; }
+}
 @media (max-width:999px) { .site-header { height: 78px; padding: 0 7vw; } .navigation { gap: 18px; } .portfolio-section { padding: 125px 9vw 120px; } .section-home { padding-top: 145px; } .name-heading { height: clamp(125px,22vw,200px); } .hero-footer { margin-top: 50px; } .selection-surface { top: 78px; } }
 @media (max-width:640px) { .menu-button { display: flex; gap: 15px; background: none; border: 0; color: #c5c9d0; font-size: 12px; padding: 12px; } .navigation { display: none; } .navigation.is-open { display: flex; position: absolute; top: 78px; left: 0; right: 0; padding: 25px 9vw; flex-direction: column; background: #101216; border-bottom: 1px solid #ffffff22; gap: 10px; } .navigation a[aria-current]::after { display: none; } .section-eyebrow { margin-bottom: 25px; } .hero-footer { gap: 15px; } .tiny-label { font-size: 8px; } .hero-statement { font-size: 29px; } .section-progress { right: 20px; bottom: 32px; } .section-progress div { width: 25px; } .particle-controls { left: 15px; bottom: 18px; max-width: calc(100vw - 30px); } .particle-controls[open] { right: 15px; } .particle-controls summary { font-size: 9px; } .scroll-hint { gap: 12px; } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; } }
+@media (max-width:640px) { .skills-grid { grid-template-columns: 1fr; } .hero-actions { gap: 12px 22px; } .hero-role { font-size: 10px; line-height: 1.8; } .hero-statement { font-size: 26px; } .hero-footer { flex-wrap: wrap; gap: 20px; } .card-heading h3 { font-size: 19px; } .section-scroll { overflow: visible; } }
