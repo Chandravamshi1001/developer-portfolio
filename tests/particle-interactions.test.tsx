@@ -64,6 +64,15 @@ describe('particle field controls and gestures', () => {
     expect(status()).toContain('0 selected')
   })
 
+  it('cancels an unfinished particle drag when page scrolling navigates sections', () => {
+    const surface = mount()
+    pointer(surface, 'pointerdown', 40, 40); pointer(surface, 'pointermove', 110, 110)
+    fireEvent.scroll(window)
+    pointer(surface, 'pointerup', 110, 110)
+    expect(status()).toContain('0 frozen')
+    expect(status()).toContain('0 selected')
+  })
+
   it('leaves navigation and controls untouched by particle selection', () => {
     mount()
     const link = screen.getByRole('link', { name: 'Projects' })

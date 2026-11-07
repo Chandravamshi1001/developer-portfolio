@@ -59,9 +59,25 @@ describe('particle simulation', () => {
   })
 
   it('caps ambient particle population and supports deterministic randomness', () => {
-    expect(createAmbientParticles(100, 100, () => 0.5)).toHaveLength(25)
-    expect(createAmbientParticles(10000, 10000, () => 0.5)).toHaveLength(110)
+    expect(createAmbientParticles(100, 100, () => 0.5)).toHaveLength(50)
+    expect(createAmbientParticles(10000, 10000, () => 0.5)).toHaveLength(220)
     expect(createAmbientParticles(800, 600, () => 0.5)).toEqual(createAmbientParticles(800, 600, () => 0.5))
+  })
+
+  it.each([[320, 568], [800, 600], [1536, 696], [1920, 1080]])('doubles the prior ambient density exactly at %ix%i', (width, height) => {
+    const previousCount = Math.min(110, Math.max(25, Math.floor(width * height / 12500)))
+    expect(createAmbientParticles(width, height, () => 0.5)).toHaveLength(previousCount * 2)
+  })
+
+  it('keeps the name pulse within a few pixels of its letter targets', () => {
+    const name = particle(1, 100, 100, { target: { x: 100, y: 100 } })
+    let maximumDisplacement = 0
+    for (let frame = 0; frame < 432; frame++) {
+      stepParticles([name], 1 / 60, frame / 60, 300, 300)
+      maximumDisplacement = Math.max(maximumDisplacement, Math.hypot(name.x - 100, name.y - 100))
+    }
+    expect(maximumDisplacement).toBeGreaterThan(0)
+    expect(maximumDisplacement).toBeLessThanOrEqual(4)
   })
 })
 

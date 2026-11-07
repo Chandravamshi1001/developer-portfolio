@@ -17,7 +17,7 @@ export function heartbeat(elapsed: number) {
 }
 
 export function createAmbientParticles(width: number, height: number, random = Math.random): Particle[] {
-  const count = Math.min(110, Math.max(25, Math.floor(width * height / 12500)))
+  const count = 2 * Math.min(110, Math.max(25, Math.floor(width * height / 12500)))
   return Array.from({ length: count }, (_, id) => ({ id, x: random() * width, y: random() * height, vx: (random() - 0.5) * 11, vy: -4 - random() * 9, radius: 0.5 + random() * 1.1, opacity: 0.2 + random() * 0.5, frozen: false, phase: random() * Math.PI * 2 }))
 }
 
@@ -43,7 +43,7 @@ export function stepParticles(particles: Particle[], dt: number, elapsed: number
     }
     if (particle.target) {
       const beat = heartbeat(elapsed)
-      const spread = 11 * beat
+      const spread = 3 * beat
       const x = particle.target.x + Math.cos(particle.phase) * spread
       const y = particle.target.y + Math.sin(particle.phase) * spread
       const ease = 1 - Math.exp(-12 * seconds)

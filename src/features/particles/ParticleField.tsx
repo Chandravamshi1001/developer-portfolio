@@ -120,7 +120,11 @@ export function ParticleField() {
     const nameArea = document.querySelector('[data-particle-name]')
     if (nameArea) nameObserver.observe(nameArea)
     controls.current = { draw, restart }
-    const onScroll = () => { if (settings.current.paused || settings.current.reducedMotion) draw() }
+    const onScroll = () => {
+      // A scroll changes the content beneath a gesture; do not finish a stale drag.
+      if (dragStart || touchStart) cancel()
+      else if (settings.current.paused || settings.current.reducedMotion) draw()
+    }
     window.addEventListener('resize', resize)
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('pointerdown', down)

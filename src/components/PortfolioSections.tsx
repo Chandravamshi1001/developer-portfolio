@@ -1,16 +1,69 @@
-import { portfolio, type SectionId } from '../content/portfolio'
+import { education, experiences, portfolio, projects, skillGroups, type SectionId } from '../content/portfolio'
+import { EducationCard, ExperienceCard, ProjectCard, SkillGroup } from './ResumeCards'
 import { Section } from './Section'
-export function PortfolioSections({ navigate }: { navigate: (id: SectionId) => void }) {
+
+export function PortfolioSections({ navigate, active }: { navigate: (id: SectionId) => void; active: SectionId }) {
   return <>
-    <Section id="home" number="01" label="Developer portfolio">
+    <Section id="home" label="Software engineer" active={active}>
       <h1 id="home-heading" className="name-heading" data-particle-name><span className="sr-only">{portfolio.name}</span></h1>
-      <div className="hero-copy" data-content><p className="hero-statement">Thoughtful code.<br /><span>Purposeful experiences.</span></p><p className="muted hero-description">A space for the things I build, the ideas I explore,<br className="hidden sm:block" /> and the details that make a difference.</p><a className="text-link" href="#projects" onClick={(event) => { event.preventDefault(); navigate('projects') }}>Explore the work <span aria-hidden="true">↗</span></a></div>
-      <div className="hero-footer" data-content><span className="tiny-label">Built with intention</span><span className="tiny-label scroll-hint">Scroll to explore <span aria-hidden="true">↓</span></span></div>
+      <div className="hero-copy" data-content>
+        <p className="hero-role">{portfolio.heroTitle}</p>
+        <p className="hero-statement">{portfolio.heroTaglineLines[0]}<br /><span>{portfolio.heroTaglineLines[1]}</span></p>
+        <div className="hero-actions">
+          <a className="text-link" href="#projects" onClick={(event) => { event.preventDefault(); navigate('projects') }}>View projects <span aria-hidden="true">↗</span></a>
+          <a className="text-link" href="#contact" onClick={(event) => { event.preventDefault(); navigate('contact') }}>Contact Me <span aria-hidden="true">↗</span></a>
+          <a className="profile-link" href={portfolio.github}>GitHub <span aria-hidden="true">↗</span></a>
+          <a className="profile-link" href={portfolio.linkedin}>LinkedIn <span aria-hidden="true">↗</span></a>
+          {portfolio.resumeUrl && <a className="profile-link" href={portfolio.resumeUrl} download>Download resume <span aria-hidden="true">↓</span></a>}
+        </div>
+      </div>
+      <div className="hero-footer" data-content><span className="tiny-label">{portfolio.location}</span><span className="tiny-label scroll-hint">Scroll to explore <span aria-hidden="true">↓</span></span></div>
     </Section>
-    <Section id="about" number="02" label="About"><div data-content><h2 id="about-heading">The person<br /><span className="muted">behind the code.</span></h2><p className="section-lead">Hi, I’m Chandra Vamshi Katineni.</p><p className="muted max-w-xl">This is the beginning of my developer portfolio. A personal introduction, engineering interests, and the story behind my work will live here.</p><div className="annotation"><span className="status-dot" /> Biography coming soon</div></div></Section>
-    <Section id="projects" number="03" label="Selected work"><div data-content><h2 id="projects-heading">Ideas into<br /><span className="muted">working software.</span></h2><p className="muted max-w-xl">A place for project stories, technical decisions, and lessons from building.</p><div className="project-placeholder"><div><span className="tiny-label">Project / 001</span><h3>First project, coming soon</h3><p className="muted">Project details, source code, and a live preview will be added when ready.</p></div><span aria-hidden="true" className="project-arrow">↗</span></div></div></Section>
-    <Section id="skills" number="04" label="Toolkit"><div data-content><h2 id="skills-heading">Tools with<br /><span className="muted">a purpose.</span></h2><p className="muted max-w-xl">A detailed skills profile will follow. These are the technologies powering this portfolio.</p><ul className="skill-list" aria-label="Technologies used for this website">{['React', 'TypeScript', 'Vite', 'Tailwind CSS', 'Canvas 2D'].map((skill, index) => <li key={skill}><span className="tiny-label">0{index + 1}</span>{skill}<span aria-hidden="true">↗</span></li>)}</ul></div></Section>
-    <Section id="education" number="05" label="Education"><div data-content><h2 id="education-heading">Always<br /><span className="muted">learning.</span></h2><p className="muted max-w-xl">Education, coursework, and learning milestones will be documented here.</p><div className="education-placeholder"><span className="status-dot" /><div><h3>Education details coming soon</h3><p className="muted">Institution, qualification, and dates to be added.</p></div></div></div></Section>
-    <Section id="contact" number="06" label="Contact"><div data-content><h2 id="contact-heading">Good things<br /><span className="muted">start with hello.</span></h2><p className="muted max-w-xl">Contact details and professional links will be available here soon.</p><div className="annotation"><span className="status-dot" /> Contact information coming soon</div><a className="text-link" href="#home" onClick={(event) => { event.preventDefault(); navigate('home') }}>Back to the beginning <span aria-hidden="true">↗</span></a><p className="copyright">© {new Date().getFullYear()} {portfolio.name}</p></div></Section>
+
+    <Section id="about" label="About" active={active}>
+      <div data-content className="section-intro"><h2 id="about-heading">The person<br /><span className="muted">behind the code.</span></h2></div>
+      <div className="section-scroll about-copy" role="region" aria-labelledby="about-heading" tabIndex={0} data-content>
+        {portfolio.about.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        <p className="about-signature">Java foundations. Distributed thinking. Intelligent possibilities.</p>
+      </div>
+    </Section>
+
+    <Section id="experience" label="Experience" active={active}>
+      <div data-content className="section-intro"><h2 id="experience-heading">Systems built.<br /><span className="muted">Lessons earned.</span></h2><p className="muted section-description">{portfolio.experienceSummary}</p></div>
+      <div className="section-scroll" role="region" aria-labelledby="experience-heading" tabIndex={0} data-content>
+        {experiences.map((experience) => <ExperienceCard key={experience.company} experience={experience} />)}
+      </div>
+    </Section>
+
+    <Section id="projects" label="Selected work" active={active}>
+      <div data-content className="section-intro"><h2 id="projects-heading">Ideas into<br /><span className="muted">working software.</span></h2><p className="muted section-description">Distributed services, useful tools, and an exploration of AI agents.</p></div>
+      <div className="section-scroll" role="region" aria-labelledby="projects-heading" tabIndex={0} data-content>
+        {projects.map((project) => <ProjectCard key={project.name} project={project} />)}
+      </div>
+    </Section>
+
+    <Section id="skills" label="Toolkit" active={active}>
+      <div data-content className="section-intro"><h2 id="skills-heading">Tools with<br /><span className="muted">a purpose.</span></h2><p className="muted section-description">A toolkit spanning backend systems, cloud delivery, testing, and AI.</p></div>
+      <div className="section-scroll skills-grid" role="region" aria-labelledby="skills-heading" tabIndex={0} data-content>
+        {skillGroups.map((group) => <SkillGroup key={group.category} group={group} />)}
+      </div>
+    </Section>
+
+    <Section id="education" label="Education" active={active}>
+      <div data-content className="section-intro"><h2 id="education-heading">Always<br /><span className="muted">learning.</span></h2></div>
+      <div className="section-scroll" role="region" aria-labelledby="education-heading" tabIndex={0} data-content><EducationCard education={education} /></div>
+    </Section>
+
+    <Section id="contact" label="Contact" active={active}>
+      <div data-content className="section-intro"><h2 id="contact-heading">Let’s build<br /><span className="muted">something meaningful.</span></h2></div>
+      <div className="section-scroll contact-copy" role="region" aria-labelledby="contact-heading" tabIndex={0} data-content>
+        <p className="muted">Interested in backend systems, distributed workflows, or AI engineering? Let’s connect.</p>
+        <a className="contact-email" href={`mailto:${portfolio.email}`}>{portfolio.email}</a>
+        <div className="contact-links"><a className="text-link" href={portfolio.github}>GitHub <span aria-hidden="true">↗</span></a><a className="text-link" href={portfolio.linkedin}>LinkedIn <span aria-hidden="true">↗</span></a></div>
+        {portfolio.resumeUrl && <a className="text-link" href={portfolio.resumeUrl} download>Download resume <span aria-hidden="true">↓</span></a>}
+        <p className="tiny-label">{portfolio.location}</p>
+        <p className="copyright">© {new Date().getFullYear()} {portfolio.name}</p>
+      </div>
+    </Section>
   </>
 }
