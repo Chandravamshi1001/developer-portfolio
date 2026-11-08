@@ -1,6 +1,7 @@
-import { education, experiences, portfolio, projects, skillGroups, type SectionId } from '../content/portfolio'
-import { EducationCard, ExperienceCard, ProjectCard, SkillGroup } from './ResumeCards'
+import { education, experiences, portfolio, projects, type SectionId } from '../content/portfolio'
+import { EducationCard, ExperienceCard, ProjectCard } from './ResumeCards'
 import { Section } from './Section'
+import { SkillsExplorer } from './SkillsExplorer'
 
 export function PortfolioSections({ navigate, active }: { navigate: (id: SectionId) => void; active: SectionId }) {
   return <>
@@ -44,9 +45,7 @@ export function PortfolioSections({ navigate, active }: { navigate: (id: Section
 
     <Section id="skills" label="Toolkit" active={active}>
       <div data-content className="section-intro"><h2 id="skills-heading">Tools with<br /><span className="muted">a purpose.</span></h2><p className="muted section-description">A toolkit spanning backend systems, cloud delivery, testing, and AI.</p></div>
-      <div className="section-scroll skills-grid" role="region" aria-labelledby="skills-heading" tabIndex={0} data-content>
-        {skillGroups.map((group) => <SkillGroup key={group.category} group={group} />)}
-      </div>
+      <SkillsExplorer />
     </Section>
 
     <Section id="education" label="Education" active={active}>
