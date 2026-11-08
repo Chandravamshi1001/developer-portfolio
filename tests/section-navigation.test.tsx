@@ -28,8 +28,8 @@ vi.mock('gsap', () => ({ gsap: {
 } }))
 vi.mock('gsap/ScrollTrigger', () => ({ ScrollTrigger: { refresh: animation.refresh, update: animation.update } }))
 
-function Harness() {
-  const { shellRef, trackRef, horizontal, active, navigate } = useSectionNavigation()
+function Harness({ enabled = true }: { enabled?: boolean }) {
+  const { shellRef, trackRef, horizontal, active, navigate } = useSectionNavigation(enabled)
   return <><button onClick={() => navigate('projects')}>Go projects</button><output data-testid="mode">{horizontal ? 'horizontal' : 'vertical'}</output><output data-testid="active">{active}</output><main ref={shellRef} className={horizontal ? 'section-shell is-horizontal' : 'section-shell'}><div className="section-viewport"><div ref={trackRef} className="section-track">{portfolio.sections.map(({ id }) => <section key={id} id={id} className="portfolio-section" tabIndex={-1}><div className="section-content"><h2>{id}</h2><div className="section-scroll">{id}<a href={`#${id}`}>{id} link</a></div></div></section>)}</div></div></main></>
 }
 
@@ -96,6 +96,34 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); history.replaceState(null, '', '/') })
 
 describe('horizontal section navigation', () => {
+  it('defers pinning, hash restoration, and history ownership until the intro completes', () => {
+    history.replaceState({ external: 'retained' }, '', '/#projects')
+    history.scrollRestoration = 'auto'
+    const { rerender } = render(<Harness enabled={false} />)
+    flushFrames()
+    expect(animation.to).not.toHaveBeenCalled()
+    expect(window.scrollTo).not.toHaveBeenCalled()
+    expect(history.state).toEqual({ external: 'retained' })
+    expect(history.scrollRestoration).toBe('auto')
+    expect(location.hash).toBe('#projects')
+    rerender(<Harness enabled />); flushFrames()
+    expect(animation.to).toHaveBeenCalledTimes(1)
+    expect(window.scrollTo).toHaveBeenLastCalledWith({ top: 4480, behavior: 'instant' })
+    expect(location.hash).toBe('#projects')
+  })
+  it('removes an existing pin while Replay suspends navigation and restores the section after completion', () => {
+    history.replaceState(null, '', '/#projects')
+    const { rerender } = render(<Harness enabled />); flushFrames()
+    expect(animation.to).toHaveBeenCalledTimes(1)
+    rerender(<Harness enabled={false} />)
+    expect(animation.revert).toHaveBeenCalledTimes(1)
+    vi.mocked(window.scrollTo).mockClear()
+    fireEvent(window, new HashChangeEvent('hashchange')); flushFrames()
+    expect(window.scrollTo).not.toHaveBeenCalled()
+    rerender(<Harness enabled />); flushFrames()
+    expect(animation.to).toHaveBeenCalledTimes(2)
+    expect(window.scrollTo).toHaveBeenLastCalledWith({ top: 4480, behavior: 'instant' })
+  })
   it('pins one scrubbed track using actual width and recalculates travel dynamically', () => {
     render(<Harness />)
     expect(screen.getByTestId('mode').textContent).toBe('horizontal')

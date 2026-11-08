@@ -17,7 +17,7 @@ function savedPosition(state: unknown): ScrollPosition | undefined {
     && typeof saved.fraction === 'number' && Number.isFinite(saved.fraction)) return saved as ScrollPosition
 }
 
-export function useSectionNavigation() {
+export function useSectionNavigation(enabled = true) {
   const trackRef = useRef<HTMLDivElement>(null)
   const shellRef = useRef<HTMLElement>(null)
   const programmaticFocus = useRef(false)
@@ -31,6 +31,11 @@ export function useSectionNavigation() {
   const horizontal = desktop && !reducedMotion
 
   useLayoutEffect(() => {
+    if (!enabled) {
+      moveTo.current = () => {}
+      recordPosition.current = () => {}
+      return
+    }
     const shell = shellRef.current
     const track = trackRef.current
     if (!shell || !track) return
@@ -156,7 +161,19 @@ export function useSectionNavigation() {
 
     const refresh = () => {
       cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => { if (!disposed) { if (trigger) trigger.refresh(); else update() } })
+      frame = requestAnimationFrame(() => {
+        if (disposed) return
+        const focused = document.activeElement instanceof HTMLElement && track.contains(document.activeElement) ? document.activeElement : undefined
+        if (trigger) trigger.refresh()
+        else update()
+        // Refresh can temporarily detach the pinned track. Restore only focus
+        // lost to that operation; keep deliberate focus changes untouched.
+        if (focused?.isConnected && document.activeElement === document.body) {
+          programmaticFocus.current = true
+          focused.focus({ preventScroll: true })
+          programmaticFocus.current = false
+        }
+      })
     }
     const saveScrollPosition = () => {
       clearTimeout(historyTimer)
@@ -225,6 +242,7 @@ export function useSectionNavigation() {
     })
     // Details change column overflow without necessarily resizing the column container.
     track.addEventListener('toggle', refresh, true)
+    document.addEventListener('portfolio:content-change', refresh)
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('scrollend', saveScrollPosition)
     window.addEventListener('popstate', onPopState)
@@ -242,6 +260,7 @@ export function useSectionNavigation() {
       clearTimeout(historyTimer)
       observer.disconnect()
       track.removeEventListener('toggle', refresh, true)
+      document.removeEventListener('portfolio:content-change', refresh)
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('scrollend', saveScrollPosition)
       window.removeEventListener('popstate', onPopState)
@@ -251,9 +270,10 @@ export function useSectionNavigation() {
       context.revert()
       panels.forEach((panel) => panel.style.removeProperty('--panel-width'))
     }
-  }, [horizontal])
+  }, [horizontal, enabled])
 
   const navigate = (id: SectionId) => {
+    if (!enabled) return
     if (location.hash !== `#${id}`) {
       recordPosition.current()
       history.pushState(null, '', `#${id}`)

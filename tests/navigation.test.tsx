@@ -1,9 +1,12 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SiteHeader } from '../src/components/SiteHeader'
 import { PortfolioSections } from '../src/components/PortfolioSections'
 
-afterEach(cleanup)
+beforeEach(() => {
+  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
+})
+afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('portfolio navigation and content', () => {
   it('provides all section links, indicates the current section, and closes the mobile menu on navigation', () => {
@@ -53,10 +56,11 @@ describe('portfolio navigation and content', () => {
     expect(scrollRegions).toHaveLength(6)
     for (const region of scrollRegions) {
       expect(region.getAttribute('role')).toBe('region')
-      expect(region.getAttribute('tabindex')).toBe('0')
+      if (!region.classList.contains('skills-explorer')) expect(region.getAttribute('tabindex')).toBe('0')
       expect(document.getElementById(region.getAttribute('aria-labelledby') ?? '')).not.toBeNull()
     }
-    expect(container.querySelectorAll('#skills .skill-group')).toHaveLength(5)
+    expect(container.querySelectorAll('#skills .skill-group')).toHaveLength(6)
+    expect(container.querySelectorAll('#skills button[data-skill-id]')).toHaveLength(41)
     expect(container.querySelectorAll('#education .coursework-list li')).toHaveLength(4)
   })
 })

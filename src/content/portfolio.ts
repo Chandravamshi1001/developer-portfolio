@@ -1,3 +1,5 @@
+import { skills, skillCategories } from './skills'
+
 export interface Experience {
   company: string
   role: string
@@ -28,7 +30,7 @@ const heroTaglineLines = ['Engineering reliable systems.', 'Exploring intelligen
 
 export const portfolio = {
   name: 'Chandra Vamshi Katineni',
-  nameLines: ['CHANDRA', 'VAMSHI'],
+  nameLines: ['CHANDRA VAMSHI', 'KATINENI'],
   location: 'Fort Wayne, Indiana, USA',
   title: 'Software Engineer | Java Backend Developer | AI & Distributed Systems Enthusiast',
   heroTitle: 'Software Engineer | Backend Systems | AI Engineering',
@@ -97,13 +99,7 @@ export const projects: readonly Project[] = [
   },
 ]
 
-export const skillGroups: readonly Skills[] = [
-  { category: 'Languages', items: ['Java', 'Python', 'C++', 'JavaScript', 'TypeScript', 'SQL'] },
-  { category: 'Backend & Distributed Systems', items: ['Spring Boot', 'Django REST', 'REST APIs', 'Microservices', 'Kafka', 'RabbitMQ', 'Redis', 'PostgreSQL', 'MySQL'] },
-  { category: 'Cloud & DevOps', items: ['AWS', 'Docker', 'Kubernetes', 'Git', 'GitHub', 'Jenkins', 'GitHub Actions', 'CI/CD', 'Linux'] },
-  { category: 'Testing', items: ['JUnit', 'Mockito', 'Cypress', 'Unit Testing', 'Integration Testing', 'End-to-End Testing'] },
-  { category: 'AI Tools', items: ['Codex CLI', 'Claude Code', 'Cursor', 'Gemini', 'ChatGPT'] },
-]
+export const skillGroups: readonly Skills[] = skillCategories.map(category => ({ category, items: skills.filter(skill => skill.category === category).map(skill => skill.name) }))
 
 export const education: Education = {
   institution: 'Purdue University Fort Wayne', qualification: 'Master of Science in Computer Science',

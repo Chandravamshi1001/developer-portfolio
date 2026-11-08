@@ -14,6 +14,15 @@ await mkdir(output, { recursive: true })
 const checks = []
 const errors = []
 const near = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 2, `${message}: actual ${actual}, expected ${expected}`)
+async function ready(page) {
+  await page.locator('.portfolio-app[data-intro-active]').waitFor({ state: 'attached' })
+  const skip = page.getByRole('button', { name: 'Skip intro', exact: true })
+  if (await skip.isVisible()) await skip.click()
+  await page.locator('.portfolio-app[data-intro-active="false"]').waitFor({ state: 'attached' })
+  await page.locator('.site-header').waitFor({ state: 'visible' })
+  await page.waitForFunction(() => !document.querySelector('.site-header')?.closest('[inert]'))
+  await page.waitForTimeout(200)
+}
 async function metrics(page) {
   return page.evaluate(() => {
     const track = document.querySelector('.section-track')
@@ -39,7 +48,11 @@ async function scroll(page, top) {
   await page.waitForTimeout(180)
 }
 async function expectScroll(page, top) {
-  await page.waitForFunction(top => Math.abs(window.scrollY - top) < 2, top)
+  await page.waitForFunction(top => Math.abs(window.scrollY - top) < 2, top).catch(async error => {
+    const state = await metrics(page)
+    await page.screenshot({ path: join(output, 'navigation-scroll-failure.png') })
+    throw new Error(`Expected root scroll ${top}; observed ${JSON.stringify(state)}`, { cause: error })
+  })
   await page.waitForTimeout(100)
 }
 async function noClippedText(page) {
@@ -65,7 +78,22 @@ async function noClippedText(page) {
 try {
   const page = await browser.newPage({ viewport: { width: 1536, height: 696 } })
   page.on('pageerror', error => errors.push(error.message))
-  await page.goto(base); await page.waitForTimeout(650)
+  await page.goto(base)
+  const skipIntro = page.getByRole('button', { name: 'Skip intro', exact: true })
+  await skipIntro.waitFor({ state: 'visible' })
+  assert.ok(await page.locator('.hero-statement').isVisible(), 'Portfolio text stays visible during the initial two-star scene')
+  assert.ok(await page.locator('.site-header').isVisible(), 'Header stays visible during the initial two-star scene')
+  assert.ok(await page.locator('.portfolio-content').evaluate(content => content.inert), 'Visible portfolio remains inert during the intro')
+  assert.equal(await page.locator('.pin-spacer').count(), 0, 'Navigation is not pinned before collision')
+  await page.screenshot({ path: join(output, 'intro-two-stars.png') })
+  await page.waitForFunction(() => document.querySelector('canvas')?.dataset.introPhase === 'burst')
+  assert.ok(await page.locator('.hero-statement').isVisible(), 'Portfolio text stays visible through the collision burst')
+  await page.waitForTimeout(500)
+  await page.screenshot({ path: join(output, 'intro-collision-burst.png') })
+  await skipIntro.waitFor({ state: 'hidden', timeout: 15000 })
+  await ready(page)
+  assert.ok(await page.locator('.hero-statement').isVisible(), 'Portfolio text appears when the intro finishes')
+  checks.push('Initial collision intro completes naturally before enabling navigation')
   let state = await metrics(page)
   assert.equal(state.horizontal, true); assert.equal(state.pins, 1)
   near(state.x, 0, 'Home starts at zero')
@@ -73,9 +101,54 @@ try {
   assert.equal(state.nested, 0); assert.equal(state.pageWidth, state.width)
   assert.equal(state.canvasPosition, 'fixed'); assert.equal(state.canvasInsideTrack, false)
   await page.screenshot({ path: join(output, 'desktop-home.png') })
+  await page.locator('nav a[href="#projects"]').click()
+  await page.waitForFunction(() => document.querySelector('nav [aria-current]')?.getAttribute('href') === '#projects')
+  await page.locator('.particle-controls summary').click()
+  await page.getByRole('button', { name: 'Replay intro', exact: true }).click()
+  await skipIntro.waitFor({ state: 'visible' })
+  assert.equal(await page.locator('.pin-spacer').count(), 0, 'Replay releases the navigation pin')
+  await page.waitForFunction(() => document.querySelector('canvas')?.dataset.introPhase === 'burst')
+  await page.setViewportSize({ width: 1280, height: 800 })
+  assert.ok(await page.locator('.hero-statement').isVisible(), 'Mid-burst resize preserves visible content')
+  await page.screenshot({ path: join(output, 'intro-resized-burst.png') })
+  await ready(page)
+  assert.equal(await page.locator('.pin-spacer').count(), 1, 'Skip restores exactly one navigation pin')
+  await page.setViewportSize({ width: 1536, height: 696 })
+  await page.locator('nav a[href="#home"]').click()
+  await expectScroll(page, 0)
+  checks.push('Replay from Projects suspends navigation, mid-burst resize preserves visible content, and Skip restores a single pin')
+  await page.locator('.particle-controls summary').click()
   const canvasBefore = await page.locator('canvas').evaluate(canvas => canvas.toDataURL())
   await page.waitForTimeout(100)
   assert.notEqual(await page.locator('canvas').evaluate(canvas => canvas.toDataURL()), canvasBefore, 'Ambient canvas continues animating')
+  const nameMotion = await page.evaluate(async () => {
+    const { createNameParticles } = await import('/src/features/particles/renderer.ts')
+    const { stepParticles, freezeParticle } = await import('/src/features/particles/physics.ts')
+    const { portfolio } = await import('/src/content/portfolio.ts')
+    const rect = document.querySelector('[data-particle-name]').getBoundingClientRect()
+    const names = createNameParticles(portfolio.nameLines, rect, 10000)
+    const sample = names[0]
+    let maximum = 0
+    for (let frame = 0; frame < 432; frame++) {
+      stepParticles(names, 1 / 60, frame / 60, innerWidth, innerHeight)
+      maximum = Math.max(maximum, Math.hypot(sample.x - sample.target.x, sample.y - sample.target.y))
+    }
+    freezeParticle(sample)
+    const frozen = { x: sample.x, y: sample.y }
+    for (let frame = 0; frame < 120; frame++) stepParticles(names, 1 / 60, frame / 60, innerWidth, innerHeight)
+    return { maximum, count: names.length, frozenStatic: sample.x === frozen.x && sample.y === frozen.y }
+  })
+  assert.ok(nameMotion.maximum > .1 && nameMotion.maximum <= 3, 'Name has the restored gentle heartbeat')
+  assert.ok(nameMotion.count > 0 && nameMotion.count <= 1800, 'Name retains original particle population limit')
+  assert.ok(nameMotion.frozenStatic, 'Frozen name particles ignore the heartbeat')
+  await page.locator('.particle-controls summary').click()
+  await page.getByRole('button', { name: 'Pause motion', exact: true }).click()
+  const pausedCanvas = await page.locator('canvas').evaluate(canvas => canvas.toDataURL())
+  await page.waitForTimeout(200)
+  assert.equal(await page.locator('canvas').evaluate(canvas => canvas.toDataURL()), pausedCanvas, 'Pause keeps name and background static')
+  await page.getByRole('button', { name: 'Resume motion', exact: true }).click()
+  await page.locator('.particle-controls summary').click()
+  checks.push(`Name heartbeat moves within ${nameMotion.maximum.toFixed(2)}px using ${nameMotion.count} particles; frozen particles and Pause remain static`)
   await page.mouse.move(900, 400); await page.mouse.wheel(0, 400); await page.waitForTimeout(200)
   state = await metrics(page); near(state.x, -state.scroll, 'Native downward wheel continuously translates whole track')
   assert.ok(state.scroll > 0); near(state.y, 0, 'No vertical track translation')
@@ -89,14 +162,14 @@ try {
   checks.push('1536×696: native wheel forward/reverse, fractional progress, Home/About/Experience/Contact, pin distance and endpoints, fixed independently animated Canvas, no nested/main overflow')
 
   for (const id of ['home', 'about', 'experience', 'projects', 'skills', 'education', 'contact']) {
-    await page.goto(`${base}#${id}`); await page.reload(); await page.waitForTimeout(250)
+    await page.goto(`${base}#${id}`); await page.reload(); await ready(page)
     state = await metrics(page)
     near(state.scroll, state.sections.find(section => section.id === id).left, `Direct #${id}`)
     assert.equal(state.active, `#${id}`)
   }
   checks.push('All seven cold-load section hashes load at correct measured offsets')
 
-  await page.goto(base); await page.waitForTimeout(250)
+  await page.goto(base); await ready(page)
   state = await metrics(page)
   const experiencePosition = state.sections.find(section => section.id === 'experience').left + 300
   const skillsPosition = state.sections.find(section => section.id === 'skills').left + 300
@@ -108,7 +181,7 @@ try {
   assert.equal((await metrics(page)).active, '#skills')
   checks.push('Navigation click plus actual browser Back/Forward restores manual Experience/Skills positions despite stale section hashes')
 
-  await page.goto(`${base}#projects`); await page.waitForTimeout(250)
+  await page.goto(`${base}#projects`); await ready(page)
   await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(400)
   state = await metrics(page)
   near(state.scroll, state.sections.find(section => section.id === 'projects').left, 'Resize preserves Projects')
@@ -116,7 +189,7 @@ try {
   checks.push('Resize 1536×696→1280×800 preserves Projects and recalculates measured travel with one pin')
 
   for (const viewport of [{ width: 1536, height: 696 }, { width: 1000, height: 560 }]) {
-    await page.setViewportSize(viewport); await page.goto(base); await page.waitForTimeout(350)
+    await page.setViewportSize(viewport); await page.goto(base); await ready(page)
     await noClippedText(page)
     await page.locator('.card-details').evaluateAll(details => details.forEach(detail => { detail.open = true }))
     await page.waitForTimeout(350)
@@ -136,7 +209,8 @@ try {
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   mobile.on('pageerror', error => errors.push(error.message))
-  await mobile.goto(base); await mobile.waitForTimeout(250)
+  await mobile.goto(base); await ready(mobile)
+  await mobile.screenshot({ path: join(output, 'mobile-home-name.png') })
   state = await metrics(mobile); assert.equal(state.horizontal, false); assert.equal(state.pins, 0); assert.equal(state.pageWidth, state.width); assert.equal(state.nested, 0)
   assert.ok(state.sections[1].top > 700)
   await mobile.getByRole('button', { name: /Menu/ }).click(); await mobile.locator('nav a[href="#projects"]').click()
@@ -148,7 +222,7 @@ try {
   await mobile.screenshot({ path: join(output, 'mobile-projects.png') })
   checks.push('390×844 touch: ordinary vertical flow, mobile menu navigation, readable naturally growing expanded details, no horizontal clipping')
 
-  await page.emulateMedia({ reducedMotion: 'reduce' }); await page.setViewportSize({ width: 1536, height: 696 }); await page.goto(`${base}#projects`); await page.waitForTimeout(300)
+  await page.emulateMedia({ reducedMotion: 'reduce' }); await page.setViewportSize({ width: 1536, height: 696 }); await page.goto(`${base}#projects`); await ready(page)
   state = await metrics(page); assert.equal(state.horizontal, false); assert.equal(state.pins, 0); assert.equal(state.nested, 0)
   assert.ok(state.sections[1].top !== state.sections[0].top)
   const reducedBefore = await page.locator('canvas').evaluate(canvas => canvas.toDataURL()); await page.waitForTimeout(100)

@@ -1,0 +1,135 @@
+﻿{
+    "base":  "210cec44881c144d9243eb7941ce1f50ce16cca0",
+    "source":  "two-star-universe-intro",
+    "purpose":  "Inherited intro and Muse baseline before Skills Explorer implementation",
+    "files":  [
+                  {
+                      "path":  "README.md",
+                      "sha256":  "7b52b12b516cf43d9b88b1df7893360bac099abe6db20a40b76faff8c2fec5e9"
+                  },
+                  {
+                      "path":  "src/App.tsx",
+                      "sha256":  "372a0098ef03f411a78f456b29022b39bcaee59fd72095e05aec57f1db463716"
+                  },
+                  {
+                      "path":  "src/main.tsx",
+                      "sha256":  "56e701803072060c494c337bcc43518fb0e1f8207340a1b11ac69fd444d29315"
+                  },
+                  {
+                      "path":  "src/styles.css",
+                      "sha256":  "77c4dce1dafae457d534f6da2cb26d059af69349c69e3e27150931166d5bf39a"
+                  },
+                  {
+                      "path":  "src/components/PortfolioMuse.css",
+                      "sha256":  "1f41dc131b19ac7f1868df95de719bbc0f138a306f0410b978077b33fface5d1"
+                  },
+                  {
+                      "path":  "src/components/PortfolioMuse.tsx",
+                      "sha256":  "1f5d6f6c1fa6cded39897eb87b3c09af0054d47d4595fd30fbaa0888c0ec6227"
+                  },
+                  {
+                      "path":  "src/components/PortfolioSections.tsx",
+                      "sha256":  "019dc1d38b08b42ff368a535faf46020d60e6001ef25de783748138b4f0fcd6f"
+                  },
+                  {
+                      "path":  "src/components/ResumeCards.tsx",
+                      "sha256":  "4c618b462eaaf4f6eaecace391d72f8c684deda328bce39cca96d6c7c7912dcd"
+                  },
+                  {
+                      "path":  "src/components/Section.tsx",
+                      "sha256":  "fc0b7aafaf0fe0be30de53afa3b4988f7c27f3f7560f0bdaa27a67149e1b030b"
+                  },
+                  {
+                      "path":  "src/components/SiteHeader.tsx",
+                      "sha256":  "fd91e3af1aa86f13c6af859751e9565769931fa5989a46153ef17f7baff4c95f"
+                  },
+                  {
+                      "path":  "src/content/portfolio.ts",
+                      "sha256":  "10c8bcaca0de4c126d3a5501002001b8e6c12b997060b375f30a7c531487c760"
+                  },
+                  {
+                      "path":  "src/features/muse/geometry.ts",
+                      "sha256":  "57b83d65fb1720f8ae3c6585496079bd468b9635c8de0d0994ffda23fc9d0b24"
+                  },
+                  {
+                      "path":  "src/features/navigation/useSectionNavigation.ts",
+                      "sha256":  "33abcd2a95f08cb47a0ec3e2223246ce5e1360bb062f631bce11c1c59feddad0"
+                  },
+                  {
+                      "path":  "src/features/particles/geometry.ts",
+                      "sha256":  "80235c985fa1680f17c6b1da18ea9ae7cfb6dd0566cd5e82c003212e65f7c85c"
+                  },
+                  {
+                      "path":  "src/features/particles/gestures.ts",
+                      "sha256":  "dd7d675dad830774e0a3d4fc762f89e0f767a2213af6c869d92b8013f2b4a6b8"
+                  },
+                  {
+                      "path":  "src/features/particles/intro.ts",
+                      "sha256":  "ea2593ea154e3325bb7e232a5965831fbc314c1b03b7c7ccc054b8d2ce4d78b5"
+                  },
+                  {
+                      "path":  "src/features/particles/ParticleField.tsx",
+                      "sha256":  "d8e059641ab7c70841a492a42fe80164ec4dbe56adbadcddb05a8fb96cd4458b"
+                  },
+                  {
+                      "path":  "src/features/particles/physics.ts",
+                      "sha256":  "5b0a03f5feb9d0524fa56a1c5eef7f995154b3e27df4fa6181c7e49d8ffc9f88"
+                  },
+                  {
+                      "path":  "src/features/particles/renderer.ts",
+                      "sha256":  "d6c3de1f0915cd433253449da99a5f674d1e3ba1049639b9948da8a443c3543e"
+                  },
+                  {
+                      "path":  "src/hooks/useMediaQuery.ts",
+                      "sha256":  "18704daaf67c07bae88f8458a91f3727e79dbe6d8d120600369465e4ace3e192"
+                  },
+                  {
+                      "path":  "tests/browser-mascot.browser.js",
+                      "sha256":  "f602c7e938298f199bd52e227484854210f422058e8752bc669f492a00146614"
+                  },
+                  {
+                      "path":  "tests/browser-navigation.browser.js",
+                      "sha256":  "df90ade4f06da8280705b5a30f683c946b8406ceeb8ca7a371031378c5e5dba9"
+                  },
+                  {
+                      "path":  "tests/intro-integration.test.tsx",
+                      "sha256":  "2d34d0e64d11dfcee3328a3fce132a8aa7e93aaaa9537d7a4eef67daa31f9b6c"
+                  },
+                  {
+                      "path":  "tests/intro.test.ts",
+                      "sha256":  "3b9af2ce8a9700635ce9167defcd1b65fbe98b07226bec0031b9c7531f074212"
+                  },
+                  {
+                      "path":  "tests/muse-app.test.tsx",
+                      "sha256":  "ef737375e6ff271d6014c93caf799f1962a76a3ed3b357b18327249ebda3bca8"
+                  },
+                  {
+                      "path":  "tests/muse-formation.test.ts",
+                      "sha256":  "6f69d29feb40260a03bab12c3ca0ad5fb45eba675430968e34ddff4b743c0dee"
+                  },
+                  {
+                      "path":  "tests/name-layout.test.ts",
+                      "sha256":  "7504366dd94972af3460e6120bae2f21b12306313cefc4222966d7d8c182ae65"
+                  },
+                  {
+                      "path":  "tests/navigation.test.tsx",
+                      "sha256":  "21a40fb86e39465ce5c20d0a1044823c7e9b6eaf2ebae1ac06617881701cf9c4"
+                  },
+                  {
+                      "path":  "tests/particle-interactions.test.tsx",
+                      "sha256":  "c0a827239148d0dfd0da6274f5b7aed847d3406cd82288d2928c2dc4139839e3"
+                  },
+                  {
+                      "path":  "tests/particles.test.ts",
+                      "sha256":  "5c4fdb86da3699a9cb46074cc7984e9411f626695f1943ad0fc96749c3481cec"
+                  },
+                  {
+                      "path":  "tests/portfolio-muse.test.tsx",
+                      "sha256":  "0e52b97b51b9e909a3a7674de88344c3eeba0b274cf622d73d72c827b157bc2a"
+                  },
+                  {
+                      "path":  "tests/section-navigation.test.tsx",
+                      "sha256":  "ee624ebb903fcc86a4cb95a347b981483ee59a6d1191433ccdd06153306976a1"
+                  }
+              ]
+}
