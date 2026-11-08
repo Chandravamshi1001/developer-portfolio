@@ -69,14 +69,14 @@ describe('particle simulation', () => {
     expect(createAmbientParticles(width, height, () => 0.5)).toHaveLength(previousCount * 2)
   })
 
-  it('keeps the name pulse within a few pixels of its letter targets', () => {
+  it('pulses the formed name gently around its letter targets without pointer interaction', () => {
     const name = particle(1, 100, 100, { target: { x: 100, y: 100 } })
     let maximumDisplacement = 0
     for (let frame = 0; frame < 432; frame++) {
       stepParticles([name], 1 / 60, frame / 60, 300, 300)
       maximumDisplacement = Math.max(maximumDisplacement, Math.hypot(name.x - 100, name.y - 100))
     }
-    expect(maximumDisplacement).toBeGreaterThan(0)
+    expect(maximumDisplacement).toBeGreaterThan(1)
     expect(maximumDisplacement).toBeLessThanOrEqual(4)
   })
 })

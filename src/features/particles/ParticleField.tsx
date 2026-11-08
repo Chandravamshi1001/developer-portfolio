@@ -4,29 +4,53 @@ import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { containsPoint, nearestParticle, rectangleFromPoints, type Point, type Rectangle } from './geometry'
 import { isDrag, isProtectedTarget } from './gestures'
 import { createAmbientParticles, freezeParticle, freezeRegion, releaseAll, releaseParticle, releaseSelected, stepParticles, type Particle } from './physics'
-import { createNameParticles, homeNameRectangle, renderParticles } from './renderer'
+import { createNameParticles, homeNameRectangle, renderIntro, renderParticles } from './renderer'
+import { createIntro, finishIntro, resizeIntro, stepIntro, type IntroState } from './intro'
+import { createMuseParticles, retargetMuseParticles, type MuseBounds, type MuseFormation } from '../muse/geometry'
 
 interface FieldState { particles: Particle[]; selected: Set<number>; selection?: Rectangle; pointer?: Point }
 
-export function ParticleField() {
+interface ParticleFieldProps { playIntro?: boolean; onIntroActiveChange?: (active: boolean) => void; onMuseFormed?: (formation: MuseFormation) => void }
+
+export function ParticleField({ playIntro = false, onIntroActiveChange, onMuseFormed }: ParticleFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const state = useRef<FieldState>({ particles: [], selected: new Set() })
   const [paused, setPaused] = useState(false)
   const [selecting, setSelecting] = useState(false)
   const [frozenCount, setFrozenCount] = useState(0)
   const [selectedCount, setSelectedCount] = useState(0)
+  const [introActive, setIntroActive] = useState(playIntro)
+  const [canvasAvailable, setCanvasAvailable] = useState(true)
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const [keyboardRect, setKeyboardRect] = useState<Rectangle>({ left: 30, top: 160, right: 230, bottom: 300 })
   const settings = useRef({ paused, selecting, reducedMotion })
-  const controls = useRef({ draw: () => {}, restart: () => {} })
+  const controls = useRef({ draw: () => {}, restart: () => {}, skip: () => {}, replay: () => {} })
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+    const museAnchor = document.querySelector<HTMLElement>('[data-muse-anchor]')
+    const measureMuse = (): MuseBounds | undefined => {
+      const rectangle = museAnchor?.getBoundingClientRect()
+      return rectangle ? { left: rectangle.left, top: rectangle.top, width: rectangle.width, height: rectangle.height } : undefined
+    }
     const context = canvas.getContext('2d')
-    if (!context) return
+    if (!context) {
+      setCanvasAvailable(false)
+      setIntroActive(false)
+      const bounds = measureMuse()
+      if (playIntro && bounds) onMuseFormed?.({ particles: createMuseParticles(bounds), bounds })
+      onIntroActiveChange?.(false)
+      const app = canvas.closest('.portfolio-app')
+      app?.classList.add('has-static-name')
+      return () => { app?.classList.remove('has-static-name') }
+    }
     const field = state.current
     let frame = 0, lastTime = 0, elapsed = 0
+    let replayFrame = 0
+    let intro: IntroState | undefined
+    let museParticles: Particle[] = []
+    let museBounds: MuseBounds | undefined
     let width = window.innerWidth, height = window.innerHeight
     let dragStart: Point | undefined
     let pointerId: number | undefined
@@ -38,7 +62,17 @@ export function ParticleField() {
     }
     const homeOpacity = () => Math.max(0, 1 - window.scrollY / Math.max(1, height * 0.6))
     const visibleParticles = () => field.particles.filter((particle) => !particle.target || particle.frozen || homeOpacity() > 0.4)
-    const draw = () => renderParticles(context, field.particles, width, height, homeOpacity(), field.selection)
+    const isIntro = () => Boolean(intro && intro.phase !== 'complete')
+    const draw = () => {
+      canvas.dataset.introPhase = intro?.phase ?? 'complete'
+      if (intro && isIntro()) renderIntro(context, intro)
+      else renderParticles(context, field.particles, width, height, homeOpacity(), field.selection)
+    }
+    const complete = () => {
+      if (museBounds && museParticles.length) onMuseFormed?.({ particles: museParticles, bounds: museBounds })
+      setIntroActive(false)
+      onIntroActiveChange?.(false)
+    }
     const resize = () => {
       width = window.innerWidth; height = window.innerHeight
       const scale = Math.min(window.devicePixelRatio || 1, 2)
@@ -54,23 +88,43 @@ export function ParticleField() {
       const trackOffset = transform && transform !== 'none' ? new DOMMatrixReadOnly(transform).m41 : 0
       const nameBounds = nameArea ? homeNameRectangle(nameArea.getBoundingClientRect(), window.scrollY, horizontal, trackOffset) : undefined
       const name = nameBounds ? createNameParticles(portfolio.nameLines, nameBounds, 10000) : []
-      const frozenIds = new Set(frozen.map((particle) => particle.id))
-      field.particles = [...frozen, ...ambient.filter((particle) => !frozenIds.has(particle.id)), ...name.filter((particle) => !frozenIds.has(particle.id))]
+      if (intro && isIntro()) {
+        // Preserve the collision-born population while adapting its destinations
+        // to the new text raster. No particle teleports or second birth event.
+        const existingName = field.particles.filter(particle => particle.target)
+        existingName.forEach((particle, index) => {
+          const destination = name[Math.min(name.length - 1, Math.floor(index * name.length / existingName.length))]
+          if (destination?.target) particle.target = { ...destination.target }
+        })
+        const bounds = measureMuse()
+        if (bounds && museParticles.length) {
+          museBounds = bounds
+          retargetMuseParticles(museParticles, bounds)
+        }
+        resizeIntro(intro, width, height)
+      } else {
+        const frozenIds = new Set(frozen.map((particle) => particle.id))
+        field.particles = [...frozen, ...ambient.filter((particle) => !frozenIds.has(particle.id)), ...name.filter((particle) => !frozenIds.has(particle.id))]
+      }
       draw()
     }
     const animate = (time: number) => {
       const dt = lastTime ? (time - lastTime) / 1000 : 0
       lastTime = time
-      if (!settings.current.paused && !settings.current.reducedMotion) {
+      if (intro && isIntro()) {
+        stepIntro(intro, Math.min(dt, .04))
+        if (intro.phase === 'complete') complete()
+      } else if (!settings.current.paused && !settings.current.reducedMotion) {
         elapsed += Math.min(dt, 0.04)
         stepParticles(field.particles, dt, elapsed, width, height, field.pointer)
       }
       draw()
-      if (!document.hidden && !settings.current.paused && !settings.current.reducedMotion) frame = requestAnimationFrame(animate)
+      if (!document.hidden && (isIntro() || (!settings.current.paused && !settings.current.reducedMotion))) frame = requestAnimationFrame(animate)
     }
     const restart = () => { cancelAnimationFrame(frame); lastTime = 0; if (!document.hidden) frame = requestAnimationFrame(animate) }
     const getPoint = (event: PointerEvent): Point => ({ x: event.clientX, y: event.clientY })
     const down = (event: PointerEvent) => {
+      if (isIntro()) return
       if (event.button !== 0 || isProtectedTarget(event.target)) return
       if (!(event.target instanceof Element) || !event.target.closest('[data-particle-surface]')) return
       if (event.pointerType === 'touch' && !settings.current.selecting) {
@@ -81,6 +135,7 @@ export function ParticleField() {
       if (settings.current.selecting) { field.selection = rectangleFromPoints(dragStart, dragStart); event.preventDefault() }
     }
     const move = (event: PointerEvent) => {
+      if (isIntro()) return
       field.pointer = event.pointerType === 'mouse' && !isProtectedTarget(event.target) ? getPoint(event) : undefined
       if (touchStart && touchStart.id === event.pointerId && isDrag(touchStart.point, getPoint(event))) touchStart.moved = true
       if (dragStart && event.pointerId === pointerId && isDrag(dragStart, getPoint(event))) {
@@ -88,6 +143,7 @@ export function ParticleField() {
       }
     }
     const up = (event: PointerEvent) => {
+      if (isIntro()) return
       const point = getPoint(event)
       if (dragStart && pointerId === event.pointerId) {
         if (isDrag(dragStart, point)) field.selected = freezeRegion(visibleParticles(), rectangleFromPoints(dragStart, point))
@@ -110,16 +166,47 @@ export function ParticleField() {
       if (touchStart?.id === event.pointerId) touchStart = undefined
     }
     const doubleClick = (event: MouseEvent) => {
+      if (isIntro()) return
       if (isProtectedTarget(event.target)) return
       const particle = nearestParticle(visibleParticles().filter((particle) => particle.frozen), event)
       if (particle) { releaseParticle(particle); updateCounts(); draw() }
     }
     const cancel = () => { dragStart = undefined; pointerId = undefined; touchStart = undefined; field.selection = undefined; field.pointer = undefined; draw() }
-    resize(); restart()
+    const skip = () => {
+      if (!intro || !isIntro()) return
+      finishIntro(intro)
+      complete()
+      draw()
+      restart()
+    }
+    const begin = () => {
+      // Navigation has released its pin before replay's next animation frame.
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      intro = field.particles.length ? createIntro(field.particles, width, height) : undefined
+      resize()
+      releaseAll(field.particles)
+      field.selected.clear(); field.selection = undefined; field.pointer = undefined
+      updateCounts()
+      museBounds = onMuseFormed ? measureMuse() : undefined
+      museParticles = museBounds ? createMuseParticles(museBounds) : []
+      intro = createIntro(museParticles.length ? [...field.particles, ...museParticles] : field.particles, width, height)
+      if (settings.current.reducedMotion) { finishIntro(intro); complete() }
+      draw()
+      restart()
+    }
+    const replay = () => {
+      if (settings.current.reducedMotion) return
+      setPaused(false); setSelecting(false)
+      setIntroActive(true); onIntroActiveChange?.(true)
+      cancelAnimationFrame(replayFrame)
+      replayFrame = requestAnimationFrame(begin)
+    }
+    if (playIntro) begin()
+    else { resize(); restart() }
     const nameObserver = new ResizeObserver(resize)
     const nameArea = document.querySelector('[data-particle-name]')
     if (nameArea) nameObserver.observe(nameArea)
-    controls.current = { draw, restart }
+    controls.current = { draw, restart, skip, replay }
     const onScroll = () => {
       // A scroll changes the content beneath a gesture; do not finish a stale drag.
       if (dragStart || touchStart) cancel()
@@ -136,6 +223,7 @@ export function ParticleField() {
     document.addEventListener('visibilitychange', restart)
     return () => {
       cancelAnimationFrame(frame)
+      cancelAnimationFrame(replayFrame)
       nameObserver.disconnect()
       window.removeEventListener('resize', resize); window.removeEventListener('scroll', onScroll)
       window.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move)
@@ -143,12 +231,13 @@ export function ParticleField() {
       window.removeEventListener('blur', cancel); window.removeEventListener('dblclick', doubleClick)
       document.removeEventListener('visibilitychange', restart)
     }
-  }, [])
+  }, [playIntro, onIntroActiveChange, onMuseFormed])
 
   useEffect(() => {
     settings.current = { paused, selecting, reducedMotion }
     if (!selecting) state.current.selection = undefined
     if (reducedMotion) stepParticles(state.current.particles, 0, 0, innerWidth, innerHeight, undefined, true)
+    if (reducedMotion) controls.current.skip()
     const surface = document.querySelector<HTMLElement>('.portfolio-app')
     if (surface) surface.style.touchAction = selecting ? 'none' : ''
     controls.current.draw()
@@ -166,9 +255,10 @@ export function ParticleField() {
   }
 
   return <>
-    <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />
+    <canvas ref={canvasRef} className={`particle-canvas${introActive ? ' is-intro' : ''}`} aria-hidden="true" hidden={!canvasAvailable} />
+    {introActive && <div className="intro-controls"><button type="button" onClick={() => controls.current.skip()}>Skip intro</button></div>}
     {selecting && <div data-particle-surface className="selection-surface" aria-hidden="true" />}
-    <details className="particle-controls" data-content>
+    <details className="particle-controls" data-content hidden={!canvasAvailable}>
       <summary>Particle controls <span aria-hidden="true">+</span></summary>
       <div className="control-body">
         <p>Click to freeze. Double-click to release. Drag empty space to select. On touch, tap to toggle or enable region selection.</p>
@@ -177,6 +267,7 @@ export function ParticleField() {
           <button type="button" onClick={() => setSelecting(!selecting)} aria-pressed={selecting}>{selecting ? 'Cancel selection' : 'Select region'}</button>
           <button type="button" onClick={() => release(false)} disabled={selectedCount === 0}>Release selection</button>
           <button type="button" onClick={() => release(true)} disabled={frozenCount === 0}>Release all</button>
+          {playIntro && <button type="button" onClick={() => controls.current.replay()} disabled={reducedMotion}>Replay intro</button>}
         </div>
         {selecting && <div>
           <p>Keyboard: move the rectangle with arrows; hold Shift to resize.</p>

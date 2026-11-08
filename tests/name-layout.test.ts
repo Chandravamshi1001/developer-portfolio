@@ -1,5 +1,21 @@
-import { describe, expect, it } from 'vitest'
-import { homeNameRectangle } from '../src/features/particles/renderer'
+import { describe, expect, it, vi } from 'vitest'
+import { homeNameRectangle, renderIntro } from '../src/features/particles/renderer'
+import { portfolio } from '../src/content/portfolio'
+import { createIntro, INTRO_TIMING, stepIntro } from '../src/features/particles/intro'
+
+it('keeps Chandra Vamshi together above Katineni', () => {
+  expect(portfolio.nameLines).toEqual(['CHANDRA VAMSHI', 'KATINENI'])
+})
+
+it('leaves the portfolio background visible throughout the intro', () => {
+  const fillRect = vi.fn()
+  const context = { clearRect: vi.fn(), fillRect, save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(), arc: vi.fn(), fill: vi.fn(), stroke: vi.fn() } as unknown as CanvasRenderingContext2D
+  const intro = createIntro([], 1200, 750)
+  renderIntro(context, intro)
+  stepIntro(intro, INTRO_TIMING.collision)
+  renderIntro(context, intro)
+  expect(fillRect).not.toHaveBeenCalled()
+})
 
 describe('home name coordinates after resizing away from Home', () => {
   it('removes horizontal track translation from name targets', () => {

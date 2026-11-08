@@ -42,8 +42,7 @@ export function stepParticles(particles: Particle[], dt: number, elapsed: number
       continue
     }
     if (particle.target) {
-      const beat = heartbeat(elapsed)
-      const spread = 3 * beat
+      const spread = 3 * heartbeat(elapsed)
       const x = particle.target.x + Math.cos(particle.phase) * spread
       const y = particle.target.y + Math.sin(particle.phase) * spread
       const ease = 1 - Math.exp(-12 * seconds)
